@@ -17,6 +17,7 @@ function MiAirPurifier(log, config) {
 	this.showAirQuality = config.showAirQuality || false;
 	this.showTemperature = config.showTemperature || false;
 	this.showHumidity = config.showTemperature || false;
+	this.maxFanSpeed = (config.maxFanSpeed || 16) / 100;
 
 	this.services = [];
 
@@ -25,11 +26,6 @@ function MiAirPurifier(log, config) {
 
 	if (!this.token)
 		throw new Error('Your must provide token of the Air Purifier.');
-
-	// Modes supported
-	this.modes = [
-		[0, 'idle'], [60, 'auto'], [80, 'silent'], [100, 'favorite']
-	];
 
 	// Register the service
 	this.service = new Service.AirPurifier(this.name);
@@ -170,30 +166,18 @@ MiAirPurifier.prototype = {
 	},
 
 	getRotationSpeed: function (callback) {
-		this.device.call('get_prop', ['mode'])
+		this.device.call('get_prop', ['favorite_level'])
 			.then(result => {
-				for (var item of this.modes) {
-					if (result[0] == item[1]) {
-						callback(null, item[0]);
-						return;
-					}
-				}
+				callback(null, Math.min(100, Math.round(result[0] / this.maxFanSpeed)));
 			}).catch(callback);
 	},
 
 	setRotationSpeed: function (speed, callback) {
-		for (var item of this.modes) {
-			if (speed <= item[0]) {
-				this.device.call('set_mode', [item[1]])
-					.then(result => {
-						(result[0] === 'ok') ? callback() : callback(new Error(result[0]));
-					})
-					.catch(err => {
-						callback(err);
-					});
-				break;
-			}
-		}
+		// Note: if this doesn't work, try to use "set_favorite_level" (different firmware version)
+		this.device.call('set_level_favorite', [Math.round(speed * this.maxFanSpeed)])
+			.then(result => {
+				(result[0] === 'ok') ? callback() : callback(new Error(result[0]));
+			}).catch(callback);
 	},
 
 	getAirQuality: function (callback) {
