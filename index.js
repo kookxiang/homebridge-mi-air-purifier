@@ -114,7 +114,7 @@ MiAirPurifier.prototype = {
 		this.device.call('get_prop', ['mode'])
 			.then(result => {
 				callback(null, (result[0] === 'idle') ? Characteristic.Active.INACTIVE: Characteristic.Active.ACTIVE);
-            }).catch(err => {
+			}).catch(err => {
 				callback(err);
 			});
 	},
@@ -151,7 +151,7 @@ MiAirPurifier.prototype = {
 		this.device.call('set_mode', [(state) ? 'auto' : 'favorite'])
 			.then(result => {
 				(result[0] === 'ok') ? callback() : callback(new Error(result[0]));
-            })
+			})
 			.catch(err => {
 				callback(err);
 			});
@@ -180,7 +180,7 @@ MiAirPurifier.prototype = {
 		this.device.call('get_prop', ['humidity'])
 			.then(result => {
 				callback(null, result[0]);
-            }).catch(err => {
+			}).catch(err => {
 				callback(err);
 			});
 	},
@@ -231,7 +231,7 @@ MiAirPurifier.prototype = {
 						return;
 					}
 				}
-            }).catch(err => {
+			}).catch(err => {
 				callback(err);
 			});
 	},
