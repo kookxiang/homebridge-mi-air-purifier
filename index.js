@@ -2,7 +2,7 @@ var miio = require('miio');
 var Service, Characteristic;
 var devices = [];
 
-module.exports = function(homebridge) {
+module.exports = function (homebridge) {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 
@@ -20,10 +20,10 @@ function MiAirPurifier(log, config) {
 
 	this.services = [];
 
-	if(!this.ip)
+	if (!this.ip)
 		throw new Error('Your must provide IP address of the Air Purifier.');
 
-	if(!this.token)
+	if (!this.token)
 		throw new Error('Your must provide token of the Air Purifier.');
 
 	// Modes supported
@@ -69,7 +69,7 @@ function MiAirPurifier(log, config) {
 	this.services.push(this.service);
 	this.services.push(this.serviceInfo);
 
-	if(this.showAirQuality){
+	if (this.showAirQuality) {
 		this.airQualitySensorService = new Service.AirQualitySensor('Air Quality');
 
 		this.airQualitySensorService
@@ -79,7 +79,7 @@ function MiAirPurifier(log, config) {
 		this.services.push(this.airQualitySensorService);
 	}
 
-	if(this.showTemperature){
+	if (this.showTemperature) {
 		this.temperatureSensorService = new Service.TemperatureSensor('Temperature');
 
 		this.temperatureSensorService
@@ -89,7 +89,7 @@ function MiAirPurifier(log, config) {
 		this.services.push(this.temperatureSensorService);
 	}
 
-	if(this.showHumidity){
+	if (this.showHumidity) {
 		this.humiditySensorService = new Service.HumiditySensor('Humidity');
 
 		this.humiditySensorService
@@ -103,105 +103,87 @@ function MiAirPurifier(log, config) {
 }
 
 MiAirPurifier.prototype = {
-	discover: function(){
+	discover: function () {
 		this.device = new miio.Device({
-			address	: this.ip,
-			token	: this.token
+			address: this.ip,
+			token: this.token
 		});
 	},
 
-	getActive: function(callback) {
+	getActive: function (callback) {
 		this.device.call('get_prop', ['mode'])
 			.then(result => {
-				callback(null, (result[0] === 'idle') ? Characteristic.Active.INACTIVE: Characteristic.Active.ACTIVE);
-			}).catch(err => {
-				callback(err);
-			});
+				callback(null, (result[0] === 'idle') ? Characteristic.Active.INACTIVE : Characteristic.Active.ACTIVE);
+			}).catch(callback);
 	},
 
-	setActive: function(state, callback) {
+	setActive: function (state, callback) {
 		this.device.call('set_power', [(state) ? 'on' : 'off'])
 			.then(result => {
 				(result[0] === 'ok') ? callback() : callback(new Error(result[0]));
 			})
-			.catch(err => {
-				callback(err);
-			});
+			.catch(callback);
 	},
 
-	getCurrentAirPurifierState: function(callback) {
+	getCurrentAirPurifierState: function (callback) {
 		this.device.call('get_prop', ['mode'])
 			.then(result => {
 				callback(null, (result[0] === 'idle') ? Characteristic.CurrentAirPurifierState.INACTIVE : Characteristic.CurrentAirPurifierState.PURIFYING_AIR);
-			}).catch(err => {
-				callback(err);
-			});
+			}).catch(callback);
 	},
 
-	getTargetAirPurifierState: function(callback) {
+	getTargetAirPurifierState: function (callback) {
 		this.device.call('get_prop', ['mode'])
 			.then(result => {
 				callback(null, (result[0] === 'favorite') ? Characteristic.TargetAirPurifierState.MANUAL : Characteristic.TargetAirPurifierState.AUTO);
-			}).catch(err => {
-				callback(err);
-			});
+			}).catch(callback);
 	},
 
-	setTargetAirPurifierState: function(state, callback) {
+	setTargetAirPurifierState: function (state, callback) {
 		this.device.call('set_mode', [(state) ? 'auto' : 'favorite'])
 			.then(result => {
 				(result[0] === 'ok') ? callback() : callback(new Error(result[0]));
 			})
-			.catch(err => {
-				callback(err);
-			});
+			.catch(callback);
 	},
 
-	getLockPhysicalControls: function(callback) {
+	getLockPhysicalControls: function (callback) {
 		this.device.call('get_prop', ['child_lock'])
 			.then(result => {
 				callback(null, result[0] === 'on' ? Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED : Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED);
 			})
-			.catch(err => {
-				callback(err);
-			});
+			.catch(callback);
 	},
 
-	setLockPhysicalControls: function(state, callback) {
+	setLockPhysicalControls: function (state, callback) {
 		this.device.call('set_child_lock', [(state) ? 'on' : 'off'])
 			.then(result => {
 				(result[0] === 'ok') ? callback() : callback(new Error(result[0]));
-			}).catch(err => {
-				callback(err);
-			});
+			}).catch(callback);
 	},
 
-	getCurrentRelativeHumidity: function(callback) {
+	getCurrentRelativeHumidity: function (callback) {
 		this.device.call('get_prop', ['humidity'])
 			.then(result => {
 				callback(null, result[0]);
-			}).catch(err => {
-				callback(err);
-			});
+			}).catch(callback);
 	},
 
-	getRotationSpeed: function(callback) {
+	getRotationSpeed: function (callback) {
 		this.device.call('get_prop', ['mode'])
 			.then(result => {
-				for(var item of this.modes){
-					if(result[0] == item[1]){
+				for (var item of this.modes) {
+					if (result[0] == item[1]) {
 						callback(null, item[0]);
 						return;
 					}
 				}
-			}).catch(err => {
-				callback(err);
-			});
+			}).catch(callback);
 	},
 
-	setRotationSpeed: function(speed, callback) {
-		for(var item of this.modes){
-			if(speed <= item[0]){
+	setRotationSpeed: function (speed, callback) {
+		for (var item of this.modes) {
+			if (speed <= item[0]) {
 				this.device.call('set_mode', [item[1]])
 					.then(result => {
 						(result[0] === 'ok') ? callback() : callback(new Error(result[0]));
@@ -214,7 +196,7 @@ MiAirPurifier.prototype = {
 		}
 	},
 
-	getAirQuality: function(callback) {
+	getAirQuality: function (callback) {
 		var levels = [
 			[200, Characteristic.AirQuality.POOR],
 			[150, Characteristic.AirQuality.INFERIOR],
@@ -225,32 +207,28 @@ MiAirPurifier.prototype = {
 
 		this.device.call('get_prop', ['aqi'])
 			.then(result => {
-				for(var item of levels){
-					if(result[0] >= item[0]){
+				for (var item of levels) {
+					if (result[0] >= item[0]) {
 						callback(null, item[1]);
 						return;
 					}
 				}
-			}).catch(err => {
-				callback(err);
-			});
+			}).catch(callback);
 	},
 
-	getCurrentTemperature: function(callback) {
+	getCurrentTemperature: function (callback) {
 		this.device.call('get_prop', ['temp_dec'])
 			.then(result => {
 				callback(null, result[0] / 10.0);
 			})
-			.catch(err => {
-				callback(err);
-			});
+			.catch(callback);
 	},
 
-	identify: function(callback) {
+	identify: function (callback) {
 		callback();
 	},
 
-	getServices: function() {
+	getServices: function () {
 		return this.services;
 	}
 };
